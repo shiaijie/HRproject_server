@@ -1,9 +1,11 @@
-package entity;
+package hrms.entity;
 
 import com.baomidou.mybatisplus.enums.IdType;
 import com.baomidou.mybatisplus.annotations.TableId;
 import com.baomidou.mybatisplus.activerecord.Model;
 import com.baomidou.mybatisplus.annotations.TableName;
+import lombok.Data;
+
 import java.io.Serializable;
 
 /**
@@ -14,6 +16,7 @@ import java.io.Serializable;
  * @author Mht
  * @since 2019-12-01
  */
+@Data
 @TableName("user")
 public class User extends Model<User> {
 
@@ -44,6 +47,11 @@ public class User extends Model<User> {
      * 用户性别，0为男，1为女
      */
     private Integer sex;
+
+    /**
+     * 密码
+     */
+    private String password;
 
     public Integer getId() {
         return id;

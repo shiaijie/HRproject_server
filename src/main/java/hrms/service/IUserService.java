@@ -1,7 +1,8 @@
-package service;
+package hrms.service;
 
 import com.baomidou.mybatisplus.service.IService;
-import entity.User;
+import hrms.entity.User;
+import org.springframework.stereotype.Service;
 
 /**
  * <p>

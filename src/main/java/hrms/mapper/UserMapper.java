@@ -1,8 +1,9 @@
-package mapper;
+package hrms.mapper;
 
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
-import entity.User;
+import hrms.entity.User;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * <p>
@@ -12,6 +13,7 @@ import entity.User;
  * @author Mht
  * @since 2019-12-01
  */
+@Mapper
 public interface UserMapper extends BaseMapper<User> {
 
 }

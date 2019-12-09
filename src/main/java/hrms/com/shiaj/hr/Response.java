@@ -1,4 +1,4 @@
-package com.shiaj.hr;
+package hrms.com.shiaj.hr;
 
 
 import org.springframework.http.HttpStatus;

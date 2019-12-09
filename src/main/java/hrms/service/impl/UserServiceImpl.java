@@ -1,15 +1,14 @@
-package service.impl;
+package hrms.service.impl;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
-import com.oracle.webservices.internal.api.message.MessageContext;
-import entity.User;
-import mapper.UserMapper;
+import hrms.entity.User;
+import hrms.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.DigestUtils;
-import service.IUserService;
+import hrms.service.IUserService;
 
+import javax.annotation.Resource;
 
 
 /**
@@ -23,10 +22,10 @@ import service.IUserService;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
-    private final MessageContext message;
+    @Resource
+    private UserMapper mapper;
 
-    public UserServiceImpl(MessageContext message) {
-        this.message = message;
+    public UserServiceImpl() {
     }
 
     @Override

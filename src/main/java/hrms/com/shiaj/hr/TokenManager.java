@@ -1,6 +1,6 @@
-package com.shiaj.hr;
+package hrms.com.shiaj.hr;
 
-import entity.User;
+import hrms.entity.User;
 
 public interface  TokenManager {
     /**

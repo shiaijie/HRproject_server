@@ -1,4 +1,4 @@
-package com.mht.springbootmybatisplus.generate;
+package hrms.util;
 
 import com.baomidou.mybatisplus.generator.AutoGenerator;
 import com.baomidou.mybatisplus.generator.config.DataSourceConfig;
