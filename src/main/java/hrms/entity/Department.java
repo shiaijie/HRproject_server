@@ -1,9 +1,8 @@
-
 package hrms.entity;
+
 
 import com.baomidou.mybatisplus.activerecord.Model;
 import com.baomidou.mybatisplus.annotations.TableId;
-import com.baomidou.mybatisplus.annotations.TableLogic;
 import com.baomidou.mybatisplus.annotations.TableName;
 import com.baomidou.mybatisplus.enums.IdType;
 import lombok.Data;
@@ -11,45 +10,48 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
-
 /**
- * 岗位信息管理表
+ * 部门信息管理表
  */
 
 @Data
-// @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
-@TableName("post")
-public class Post extends Model<Post> {
+@TableName("depart")
+public class Department extends Model<Department> {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 岗位id
-     */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     /**
-     * 岗位名称
+     * 部门名称
      */
     private String name;
     /**
-     * 部门ID
+     * 部门全称
      */
-    private Long departId;
+    private String fullName;
+    /**
+     * 父部门
+     */
+    private Long parentDepart;
+    /**
+     * 是否为根部门
+     */
+    private String root;
     /**
      * 备注
      */
     private String remark;
     /**
-     * 删除标志
+     * 是否删除
      */
-    @TableLogic
-    private Integer deleteFlag;
+    private String deleteFlag;
 
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -57,43 +59,65 @@ public class Post extends Model<Post> {
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
 
-    public Long getDepartId() {
-        return departId;
+    public String getFullName() {
+        return fullName;
     }
-    public void setDepartId(Long departId) {
-        this.departId = departId;
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public Long getParentDepart() {
+        return parentDepart;
+    }
+
+    public void setParentDepart(Long parentDepart) {
+        this.parentDepart = parentDepart;
+    }
+
+    public String getRoot() {
+        return root;
+    }
+
+    public void setRoot(String root) {
+        this.root = root;
     }
 
     public String getRemark() {
         return remark;
     }
+
     public void setRemark(String remark) {
         this.remark = remark;
     }
 
-    public Integer getDeleteFlag() {
+    public String getDeleteFlag() {
         return deleteFlag;
     }
-    public void setDeleteFlag(Integer deleteFlag) {
+
+    public void setDeleteFlag(String deleteFlag) {
         this.deleteFlag = deleteFlag;
     }
 
-    // @Override
+    @Override
     protected Serializable pkVal() {
         return this.id;
     }
 
     @Override
     public String toString() {
-        return "Post{" +
+        return "User{" +
                 "id=" + id +
                 ", name=" + name +
-                ", departId=" + departId +
+                ", parentDepart=" + parentDepart +
+                ", root=" + root +
                 ", remark=" + remark +
+                ", deleteFlag=" + deleteFlag +
                 "}";
     }
 }

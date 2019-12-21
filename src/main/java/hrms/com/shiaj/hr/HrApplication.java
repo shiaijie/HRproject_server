@@ -12,8 +12,8 @@ import org.springframework.web.filter.CorsFilter;
 
 import javax.servlet.Filter;
 @SpringBootApplication
-@ComponentScan("hrms")
-@MapperScan(value = "hrms.mapper")
+@ComponentScan("hr")
+@MapperScan(value = "hr.mapper")
 
 public class HrApplication {
 

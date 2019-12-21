@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hrms.mapper.UserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="UserMapper" type="hrms.entity.User">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="jobCode" property="jobCode" />
+        <result column="age" property="age" />
+        <result column="sex" property="sex" />
+        <result column="password" property="password" />
+        <result column="phone" property="phone" />
+        <result column="IDnumber" property="IDnumber" />
+        <result column="departId" property="departId" />
+        <result column="postId" property="postId" />
+        <result column="political" property="political" />
+        <result column="nation" property="nation" />
+        <result column="marriageStatus" property="marriageStatus" />
+        <result column="address" property="address" />
+        <result column="inductionDay" property="inductionDay" />
+        <result column="isLeave" property="isLeave" />
+        <result column="leavingDay" property="leavingDay" />
+        <result column="isAdmin" property="isAdmin" />
+        <result column="deleteFlag" property="deleteFlag" />
+    </resultMap>
+
+    <select id="getAllUserInfoPage" resultType="hrms.entity.User">
+        SELECT
+        user.id,
+        user.name,
+        user.password,
+        user.jobCode,
+        user.age,
+        user.sex,
+        depart.name,
+        post.name,
+        user.political,
+        user.nation,
+        user.marriageStatus,
+        user.IDnumber,
+        user.address,
+        user.phone,
+        user.inductionDay,
+        user.isLeave,
+        user.leavingDay,
+        user.isAdmin,
+        user.deleteFlag
+        FROM user
+        LEFT JOIN depart ON user.departId = depart.id AND depart.deleteFlag = 0
+        LEFT JOIN post ON user.postId = post.id AND post.deleteFlag = 0
+        WHERE user.deleteFlag = 0
+        order by
+        <if test="_parameter.get('sortName') != null and !('').equals(_parameter.get('sortName'))
+         and _parameter.get('sortValue') != null and !('').equals(_parameter.get('sortValue'))">
+            ${sortName} ${sortValue},
+        </if>
+        user.id desc
+    </select>
+
+
+</mapper>

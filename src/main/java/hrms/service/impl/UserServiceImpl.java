@@ -1,14 +1,23 @@
 package hrms.service.impl;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.mapper.Wrapper;
+import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import hrms.entity.SystemConstants;
 import hrms.entity.User;
 import hrms.mapper.UserMapper;
+import hrms.util.SortUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import hrms.service.IUserService;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -16,7 +25,6 @@ import javax.annotation.Resource;
  *  服务实现类
  * </p>
  *
- * @author Mht
  * @since 2019-12-01
  */
 @Service
@@ -24,9 +32,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Resource
     private UserMapper mapper;
-
-    public UserServiceImpl() {
-    }
 
     @Override
     public User login(String jobCode, String password) throws Exception {
@@ -158,4 +163,149 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         info.setFirstUrl(firstUrl);
         return info;
     }*/
+
+
+    @Override
+    public boolean register(Map<String, Object> params) {
+        String jobCode = params.get("jobCode").toString();
+        String phone = params.get("phone").toString();
+        String password = params.get("password").toString();
+        String name = params.get("name").toString();
+        // 若工号和手机号不重复，注册成功
+        if (checkJobCode(jobCode) && checkPhone(phone)) {
+            User user = new User();
+            user.setName(name);
+            user.setJobCode(jobCode);
+            user.setPassword(password);
+            user.insert();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean checkJobCode(String jobCode) {
+        List<User> userList = new User().selectList(new EntityWrapper<>().eq("jobCode", jobCode));
+        if (CollectionUtils.isEmpty(userList)) {
+            return false;
+        }
+        if (jobCode == null) {
+            return true;
+        }
+        return !userList.get(0).getPhone().equals(jobCode);
+    }
+
+    @Override
+    public boolean checkPhone(String phone) {
+        List<User> userList = new User().selectList(new EntityWrapper<>().eq("phone", phone));
+        if (CollectionUtils.isEmpty(userList)) {
+            return false;
+        }
+        if (phone == null) {
+            return true;
+        }
+        return !userList.get(0).getPhone().equals(phone);
+    }
+
+    @Override
+    public boolean checkIDnumber(String IDnumber) {
+        List<User> userList = new User().selectList(new EntityWrapper<>().eq("IDnumber", IDnumber));
+        if (CollectionUtils.isEmpty(userList)) {
+            return false;
+        }
+        if (IDnumber == null) {
+            return true;
+        }
+        return !userList.get(0).getIDnumber().equals(IDnumber);
+    }
+
+    @Override
+    public void addUser(Map<String, Object> params) {
+        User user = new User();
+        user.setName(params.get("name").toString());
+        user.setJobCode(params.get("jobCode").toString());
+        user.setPhone(params.get("phone").toString());
+        // 初始密码设为111111
+        user.setPassword("111111");
+        user.setSex(Integer.parseInt(params.get("sex").toString()));
+        user.setAge(Integer.parseInt(params.get("age").toString()));
+        user.setIDnumber(params.get("IDnumber").toString());
+        //
+        user.setDepartId(Integer.parseInt(params.get("departId").toString()));
+        user.setPostId(Integer.parseInt(params.get("postId").toString()));
+        //
+        user.setPolitical(params.get("political").toString());
+        user.setNation(params.get("nation").toString());
+        user.setMarriageStatus(params.get("marriageStatus").toString());
+        user.setAddress(params.get("address").toString());
+        user.setInductionDay(new Date());
+        user.setIsLeave(0);
+        user.setLeavingDay(null);
+        user.setIsAdmin(Integer.parseInt(params.get("isAdmin").toString()));
+        user.setDeleteFlag(0);
+        user.updateAllColumnById();
+        /*if (params.get("IDnumber") != null && StringUtils.isNotBlank(params.get("deptId").toString())){
+            user.setIDnumber(params.get("IDnumber").toString());
+        }*/
+        user.insert();
+    }
+
+    @Override
+    public User updateUserInfo(User userInfo) {
+        // 更新用户信息
+        //前端先验证手机号是否重复
+        // 根据手机号查找userInfo（selectList
+        // 赋值进去
+        // updateAllColumnById();
+        List<User> userList = this.mapper.selectList(new EntityWrapper<User>()
+                .eq("name", userInfo.getName()).eq("deleteFlag", 0));
+        if (userList.size() == 1){
+            User user = new User();
+            user = userList.get(0);
+            user.setName(userInfo.getName());
+            user.setPassword(userInfo.getPassword());
+            user.setJobCode(userInfo.getJobCode());
+            user.setAge(userInfo.getAge());
+            user.setSex(userInfo.getSex());
+            user.setDepartId(userInfo.getDepartId());
+            user.setPostId(userInfo.getPostId());
+            user.setPolitical(userInfo.getPolitical());
+            user.setNation(userInfo.getNation());
+            user.setMarriageStatus(userInfo.getMarriageStatus());
+            user.setIDnumber(userInfo.getIDnumber());
+            user.setAddress(userInfo.getAddress());
+            user.setPhone(userInfo.getPhone());
+            user.setInductionDay(userInfo.getInductionDay());
+            user.setIsLeave(userInfo.getIsLeave());
+            user.setLeavingDay(userInfo.getLeavingDay());
+            user.setIsAdmin(userInfo.getIsAdmin());
+            user.setDeleteFlag(userInfo.getDeleteFlag());
+            user.updateAllColumnById();
+        }else {
+            throw new RuntimeException();
+        }
+        return new User().selectById(userInfo.getId());
+    }
+
+    @Override
+    public List<User> getAllUserInfo() {
+        // 要写sql语句，因为有departId啥的，要左连接三个表 depart、post、duty。
+        Wrapper<User> wrapper = new EntityWrapper<>(new User(), "id, name, jobCode, age, sex, departId")
+                .eq("deleteFlag", "0").orderBy(true, "id", false);
+        return this.mapper.selectList(wrapper);
+        // this.mapper.getAllUserInfoPage();
+    }
+
+    @Override
+    public Page<User> getAllUserInfoPage(Map<String, String> params) {
+        // 排序
+        SortUtil.genOrderBy(params);
+        //分页
+        Page<User> page = new Page<>();
+        page.setCurrent(Integer.parseInt(params.get(SystemConstants.CURRENT)));
+        page.setSize(Integer.parseInt(params.get(SystemConstants.PAGE_SIZE)));
+        page.setRecords(this.mapper.getAllUserInfoPage(page, params));
+        return page;
+    }
 }

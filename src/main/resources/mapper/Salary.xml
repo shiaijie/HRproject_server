@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hrms.mapper.SalaryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="hrms.entity.Salary">
+        <id column="id" property="id"/>
+        <result column="jobCode" property="jobCode"/>
+        <result column="basicSalary" property="basicSalary"/>
+        <result column="subsidy" property="subsidy"/>
+        <result column="socialInsurance" property="socialInsurance"/>
+        <result column="accumulationFund" property="accumulationFund"/>
+        <result column="otherAdd" property="otherAdd"/>
+        <result column="otherMinus" property="otherMinus"/>
+        <result column="totalWage" property="totalWage"/>
+        <result column="yearMonth" property="yearMonth"/>
+        <result column="isFile" property="isFile"/>
+    </resultMap>
+
+    <select id="getAll" resultType="hrms.entity.Salary">
+        SELECT
+        salary.id,
+        user.name,
+        salary.jobCode,
+        salary.basicSalary,
+        salary.subsidy,
+        salary.socialInsurance,
+        salary.accumulationFund,
+        salary.otherAdd,
+        salary.otherMinus,
+        salary.totalWage,
+        salary.yearMonth,
+        salary.isFile
+        FROM salary salary
+        LEFT JOIN user user ON user.jobCode = salary.jobCode AND user.deleteFlag = 0
+        ORDER BY salary.id ASC
+    </select>
+
+    <select id="searchSalary" resultType="hrms.entity.Salary">
+        SELECT
+        salary.id,
+        user.name,
+        salary.jobCode,
+        salary.basicSalary,
+        salary.subsidy,
+        salary.socialInsurance,
+        salary.accumulationFund,
+        salary.otherAdd,
+        salary.otherMinus,
+        salary.totalWage,
+        salary.yearMonth,
+        salary.isFile
+        FROM salary salary
+        LEFT JOIN user user ON user.jobCode = salary.jobCode AND user.deleteFlag = 0
+        WHERE
+        <if test="id != null">
+            salary.id = #{id}
+        </if>
+        <if test="jobCode != null">
+            AND salary.jobCode = #{jobCode}
+        </if>
+        <if test="yearMonth != null">
+            AND salary.yearMonth = #{yearMonth}
+        </if>
+        <if test="isFile != null">
+            AND salary.isFile = #{isFile}
+        </if>
+        ORDER BY salary.id ASC
+    </select>
+
+</mapper>

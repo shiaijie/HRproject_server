@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hrms.mapper.DepartmentMapper">
+
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="hrms.entity.Department">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="parentDepart" property="parentDepart"/>
+        <result column="remark" property="remark"/>
+        <result column="deleteFlag" property="deleteFlag"/>
+    </resultMap>
+
+    <select id="getNameById" resultType="hrms.entity.Department"  parameterType="java.util.Map">
+        SELECT
+        d1.id,
+        d1.name,
+        d2.name as parentDepart,
+        d1.root,
+        d1.remark
+        FROM depart d1
+        LEFT JOIN depart d2 ON d1.parentDepart = d2.id AND d2.deleteFlag = 0
+        WHERE d1.deleteFlag = 0 AND d1.id = #{departId}
+    </select>
+
+    <select id="getAll" resultType="hrms.entity.Department">
+        SELECT
+        d1.id,
+        d1.name,
+        d2.name as parentDepart,
+        d1.root,
+        d1.remark
+        FROM depart d1
+        LEFT JOIN depart d2 ON d1.parentDepart = d2.id AND d2.deleteFlag = 0
+        WHERE d1.deleteFlag = 0
+    </select>
+
+
+</mapper>
+
+        <!--    <select id="getDepartmentTreeData" resultType="hrms.pojo.vo.TreeDataVo">
+                select
+                t.id as id,
+                t.name as title,
+                t.parentDepart as parentId,
+                (select count(*) from mst_department t1 where t1.parentDepart = t.id and t1.deleteFlag=0) as hasChildren
+                from mst_department t
+                left join tbl_post_duty pd ON t.id = pd.leader
+                left join (
+                SELECT id AS majorJobId, NULL AS partTimeId, departId, postId, dutyId, termination, deleteFlag, staffId
+                FROM tbl_staff_major_job
+                UNION ALL
+                SELECT NULL majorJobId,id AS partTimeId, departId, postId, dutyId, termination, deleteFlag, staffId
+                from tbl_staff_part_time_job
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                m.deleteFlag = 0
+                left join tbl_staff_basic s on s.id = m.staffId and s.deleteFlag = 0 AND
+                s.${@hrms.config.StaffMapperConfig@ON_JOB}
+                where t.deleteFlag = 0
+                <if test="id != null">
+                    and s.id = #{id}
+                </if>
+                order by t.orderNum,t.id asc
+            </select>
+            <select id="getDepartmentInfoTreeData" resultType="hrms.pojo.dto.TreeDepartDto">
+                select
+                t.id as id,
+                t.name as title,
+                t.parentDepart as parentId,
+                t.*,
+                (select count(*) from mst_department t1 where t1.parentDepart = t.id and t1.deleteFlag=0) as hasChildren
+                from mst_department t
+                left join tbl_post_duty pd ON t.id = pd.leader
+                left join (
+                SELECT id AS majorJobId, NULL AS partTimeId, departId, postId, dutyId, termination, deleteFlag, staffId
+                FROM tbl_staff_major_job
+                UNION ALL
+                SELECT NULL majorJobId,id AS partTimeId, departId, postId, dutyId, termination, deleteFlag, staffId
+                from tbl_staff_part_time_job
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                m.deleteFlag = 0
+                left join tbl_staff_basic s on s.id = m.staffId and s.deleteFlag = 0 AND
+                s.${@hrms.config.StaffMapperConfig@ON_JOB}
+                where t.deleteFlag = 0
+                <if test="id != null">
+                    and s.id = #{id}
+                </if>
+                order by t.orderNum,t.id asc
+            </select>
+
+            <select id="getDepartmentTreeDataByHierarchy" resultType="hrms.pojo.vo.TreeDataVo">
+                select
+                t.id as id,
+                t.name as title,
+                t.parentDepart as parentId,
+                (
+                select count(*) from mst_department t1 where t1.parentDepart = t.id and t1.deleteFlag=0
+                <if test="hierarchy != null">
+                    and t1.hierarchy &lt;= #{hierarchy}
+                </if>
+                ) as hasChildren
+                from mst_department t
+                left join tbl_post_duty pd ON t.id = pd.leader
+                left join (
+                SELECT id AS majorJobId, NULL AS partTimeId, departId, postId, dutyId, termination, deleteFlag, staffId
+                FROM tbl_staff_major_job
+                UNION ALL
+                SELECT NULL majorJobId,id AS partTimeId, departId, postId, dutyId, termination, deleteFlag, staffId
+                from tbl_staff_part_time_job
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                m.deleteFlag = 0
+                left join tbl_staff_basic s on s.id = m.staffId and s.deleteFlag = 0 AND
+                s.${@hrms.config.StaffMapperConfig@ON_JOB}
+                where t.deleteFlag = 0
+                <if test="hierarchy != null">
+                    and t.hierarchy &lt;= #{hierarchy}
+                </if>
+                order by t.orderNum,t.id asc
+            </select>
+
+            <select id="getAllOrganization" resultType="hrms.bean.NzOrganization">
+                SELECT t.id                                                 `key`,
+                       t.assist,
+                       t.root,
+                       t.name,
+                       t.name                                            as title,
+                       m.leaderName,
+                       m.leader,
+                       t.parentDepart,
+                       ifnull(c.fullPeopleNumber, 0)                     as formationFullPeopleNumber,
+                       t.orderNum,
+                count( DISTINCT b.id ) AS incumbencyFullPeopleNumber,
+
+                t.version,
+                t.skipNode,
+                t.hierarchy,
+                tsbc.fieldvalue AS hierarchyName
+                FROM mst_department t
+                       left join tbl_post_duty pd ON t.id = pd.leader
+                       left join (
+                  SELECT m1.id   AS majorJobId,
+                         NULL    AS partTimeId,
+                         m1.departId,
+                         m1.postId,
+                         m1.dutyId,
+                         m1.termination,
+                         m1.deleteFlag,
+                         m1.staffId,
+                         s1.name AS leaderName,
+                         s1.id   AS leader
+                  FROM tbl_staff_major_job m1
+                         left join tbl_staff_basic s1
+                                   on s1.id = m1.staffId and s1.deleteFlag = 0 AND s1.${@hrms.config.StaffMapperConfig@ON_JOB}
+                                where m1.deleteFlag = 0
+                  UNION ALL
+                  SELECT NULL       majorJobId,
+                         m2.id   AS partTimeId,
+                         m2.departId,
+                         m2.postId,
+                         m2.dutyId,
+                         m2.termination,
+                         m2.deleteFlag,
+                         m2.staffId,
+                         s2.name AS leaderName,
+                         s2.id   AS leader
+                  from tbl_staff_part_time_job m2
+                         left join tbl_staff_basic s2
+                                   on s2.id = m2.staffId and s2.deleteFlag = 0 AND s2.${@hrms.config.StaffMapperConfig@ON_JOB}
+                                where m2.deleteFlag = 0
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                       m.deleteFlag = 0
+
+                       left join tbl_staff_major_job a on a.departId = t.id and a.termination = 0 and a.deleteFlag = 0
+                left join tbl_staff_basic b on a.staffId = b.id and b.${@hrms.config.StaffMapperConfig@ON_JOB} and
+                b.deleteFlag = 0
+                       left join (
+                  select sum(ifnull(tpd.fullPeopleNumber, 0)) as fullPeopleNumber, departId
+                  from mst_post mp
+                         left join tbl_post_duty tpd on mp.id = tpd.postId
+                  where deleteFlag = 0
+                  group by departId) c on t.id = c.departId
+                LEFT JOIN tbl_staff_basic_config tsbc ON t.hierarchy = tsbc.fieldkey
+                AND tsbc.type = '${@hrms.enums.StaffConfigEnum@DEPARTMENT_HIERARCHY.type}'
+                AND tsbc.deleteFlag = 0
+                WHERE t.deleteFlag = '0'
+                group by t.id,
+                         t.assist,
+                         t.name,
+                         t.parentDepart,
+                         t.orderNum
+                order by t.orderNum, t.id asc
+            </select>
+            <select id="getAllOrganizationSimple" resultType="hrms.bean.NzOrganization">
+                SELECT
+                t.id                                                 `key`,
+                t.assist,
+                t.root,
+                t.fullName AS name,
+                t.fullName as title,
+                t.parentDepart,
+                t.orderNum,
+                t.version,
+                t.skipNode,
+                t.hierarchy
+                FROM mst_department t
+                WHERE t.deleteFlag = '0'
+                group by t.id,
+                         t.assist,
+                         t.name,
+                         t.parentDepart,
+                         t.orderNum
+                order by t.orderNum, t.id asc
+            </select>
+
+
+            <select id="getMaxOrderNum" resultType="java.util.Map" parameterType="java.util.Map">
+                select IFNULL(max(orderNum),0) + 1 as orderNum from mst_department
+                <where>
+                    deleteFlag = 0 and parentDepart = #{parentDepart}
+                </where>
+            </select>
+
+            <select id="getDeptTree" resultType="hrms.pojo.vo.TreeDataVo">
+                select a.id,a.name as title,a.parentDepart as parentId,sum(case when b.id is not null then 1 else 0 end) as
+                hasChildren from mst_department a
+                left join mst_department b on b.parentDepart = a.id and b.deleteFlag = 0
+                <where>
+                    a.deleteFlag = '0' and a.assist = '0'
+                </where>
+                group by a.id,a.name,a.parentDepart
+                order by a.orderNum,a.id asc
+            </select>
+
+            <select id="getDeptStaff" resultType="hrms.pojo.vo.StaffSimpleInfo" parameterType="java.util.Map">
+                SELECT
+                a.id,
+                a.jobCode,
+                a.NAME,
+                a.pinYin,
+                a.initialPinYin,
+                m.departName,
+                m.postName,
+                m.dutyName
+                FROM
+                tbl_staff_basic a
+                LEFT JOIN (
+                SELECT
+                tsmj.staffId,
+                md.fullName AS departName,
+                mp.NAME AS postName,
+                mdu.NAME AS dutyName,
+                tsmj.departId AS departId
+                FROM
+                tbl_staff_major_job tsmj
+                LEFT JOIN mst_department md
+                ON md.id = tsmj.departId
+                AND md.deleteFlag = 0
+                LEFT JOIN mst_post mp ON tsmj.postId = mp.id
+                AND mp.deleteFlag = 0
+                LEFT JOIN mst_duty mdu ON tsmj.dutyId = mdu.id
+                AND mdu.deleteFlag = 0
+                WHERE
+                tsmj.deleteFlag = 0
+                AND tsmj.termination = 0
+                ) m ON m.staffId = a.id
+                WHERE
+                m.departId in
+                <foreach collection="ids" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+                and a.${@hrms.config.StaffMapperConfig@ON_JOB} and a.deleteFlag = 0
+                order by a.jobCode
+            </select>
+            <select id="getFirstDeptInfo" resultType="hrms.entity.Department">
+                SELECT
+                    d.*
+                FROM
+                    mst_department d
+                LEFT JOIN mst_department d2 ON d.parentDepart = d2.id
+                AND d2.deleteFlag = 0
+                WHERE
+                    d2.parentDepart IS NULL
+                AND d.deleteFlag = 0
+                AND d.parentDepart IS NOT NULL
+                ORDER BY d.assist DESC,d.orderNum
+            </select>
+            <select id="getChildDeptId" resultType="java.lang.Long">
+                SELECT
+                    d.id
+                FROM
+                    mst_department d
+                WHERE
+                    d.deleteFlag = 0
+                AND d.parentDepart = #{id}
+                ORDER BY
+                    d.assist DESC,
+                    d.orderNum
+            </select>
+            <select id="getChildDept" resultType="hrms.entity.Department">
+                SELECT
+                    d.*
+                FROM
+                    mst_department d
+                WHERE
+                    d.deleteFlag = 0
+                AND d.parentDepart = #{id}
+                ORDER BY
+                    d.assist DESC,
+                    d.orderNum
+            </select>
+
+            <select id="getDepartmentStaff" resultType="hrms.pojo.vo.StaffBasicViewModel">
+                SELECT
+                id,
+                jobCode,
+                name,
+                status,
+                avatar,
+                persPhone,
+                corpPhone,
+                departName,
+                postName,
+                dutyName,
+                departFlag
+
+                FROM
+                (
+                SELECT
+                a.id,
+                a.jobCode,
+                a.name,
+                a.status,
+                a.avatar,
+                a.persPhone,
+                a.corpPhone,
+                md.NAME AS departName,
+                mp.NAME AS postName,
+                mdu.NAME AS dutyName,
+                1 AS departFlag
+                FROM
+                tbl_staff_basic a
+                LEFT JOIN tbl_staff_major_job b ON a.id = b.staffId
+                AND b.termination = 0
+                AND b.deleteFlag = 0
+                LEFT JOIN mst_department md ON b.departId = md.id
+                AND md.deleteFlag = 0
+                LEFT JOIN mst_post mp ON b.postId = mp.id
+                AND mp.deleteFlag = 0
+                LEFT JOIN mst_duty mdu ON b.dutyId = mdu.id
+                AND mdu.deleteFlag = 0
+                WHERE
+                b.departId = #{departId}
+                AND a.${@hrms.config.StaffMapperConfig@ON_JOB}
+                AND a.deleteFlag = 0
+                ) t
+                <if test="name != null and name != ''">
+                    WHERE
+                    jobCode like concat('%',#{name},'%') OR name like concat('%',#{name},'%')
+                </if>
+                GROUP BY
+                id
+
+                ORDER BY
+                jobCode
+            </select>
+
+            <select id="getNoOrganizationStaff" resultType="hrms.pojo.vo.StaffBasicViewModel">
+                SELECT
+                tsb.id,
+                tsb.name,
+                tsb.jobCode,
+                tsb.status,
+                tsb.avatar,
+                tsb.persPhone,
+                tsb.corpPhone,
+                0 AS departFlag
+                FROM
+                tbl_staff_basic tsb
+                WHERE
+                NOT EXISTS ( SELECT id FROM tbl_staff_major_job tsmj WHERE tsmj.staffId = tsb.id AND tsmj.deleteFlag = 0 AND
+                tsmj.termination = 0 )
+                AND tsb.deleteFlag = 0
+                AND tsb.${@hrms.config.StaffMapperConfig@ON_JOB}
+                <if test="name != null and name != ''">
+                    AND tsb.jobCode like concat('%',#{name},'%') OR tsb.name like concat('%',#{name},'%')
+                </if>
+                ORDER BY
+                tsb.name
+            </select>
+
+
+            <select id="getDepartmentStaffApp" resultType="hrms.pojo.vo.StaffBasicViewModel">
+                SELECT
+                a.id,
+                a.jobCode,
+                a.name,
+                a.status,
+                a.avatar,
+                a.persPhone,
+                a.corpPhone,
+                b.departId,
+                b.postId,
+                b.dutyId,
+                md.NAME AS departName,
+                mp.NAME AS postName,
+                mdu.NAME AS dutyName,
+                1 AS departFlag
+                FROM
+                tbl_staff_basic a
+                LEFT JOIN tbl_staff_major_job b ON a.id = b.staffId
+                AND b.termination = 0
+                AND b.deleteFlag = 0
+                LEFT JOIN mst_department md ON b.departId = md.id
+                AND md.deleteFlag = 0
+                LEFT JOIN mst_post mp ON b.postId = mp.id
+                AND mp.deleteFlag = 0
+                LEFT JOIN mst_duty mdu ON b.dutyId = mdu.id
+                AND mdu.deleteFlag = 0
+                WHERE
+                b.departId = #{departId}
+                AND a.${@hrms.config.StaffMapperConfig@ON_JOB}
+                AND a.deleteFlag = 0
+                <if test="name != null and name != ''">
+                    AND (a.jobCode like concat('%',#{name},'%') OR a.name like concat('%',#{name},'%'))
+                </if>
+                ORDER BY
+                a.name
+                &lt;!&ndash;<if test="list != null and list.size != 0">
+                    AND (
+                    <foreach collection="list" index="index" item="item">
+                        <if test="index != 0">
+                            OR
+                        </if>
+                        (b.postId= #{item.contactPostId} AND b.dutyId = #{item.contactDutyId})
+                    </foreach>
+                    )
+                </if>&ndash;&gt;
+
+            </select>
+            <select id="getDepartmentLeader" resultType="hrms.pojo.vo.DepartmentLeaderVo">
+                SELECT b.name,
+                       b.id    AS staffId,
+                       b.jobCOde,
+                       m.majorJobId,
+                       m.partTimeId,
+
+                       dm.id   AS departId,
+                       p.id    AS postId,
+                       d.id    AS dutyId,
+                       dm.name AS departName,
+                       p.name  AS postName,
+                       d.name  AS dutyName
+                FROM tbl_post_duty pd
+                       left join (
+                  SELECT m1.id   AS majorJobId,
+                         NULL    AS partTimeId,
+                         m1.departId,
+                         m1.postId,
+                         m1.dutyId,
+                         m1.termination,
+                         m1.deleteFlag,
+                         m1.staffId,
+                         s1.name AS leaderName,
+                         s1.id   AS leader
+                  FROM tbl_staff_major_job m1
+                         left join tbl_staff_basic s1
+                                   on s1.id = m1.staffId and s1.deleteFlag = 0 AND s1.${@hrms.config.StaffMapperConfig@ON_JOB}
+                  UNION ALL
+                  SELECT NULL       majorJobId,
+                         m2.id   AS partTimeId,
+                         m2.departId,
+                         m2.postId,
+                         m2.dutyId,
+                         m2.termination,
+                         m2.deleteFlag,
+                         m2.staffId,
+                         s2.name AS leaderName,
+                         s2.id   AS leader
+                  from tbl_staff_part_time_job m2
+                         left join tbl_staff_basic s2
+                                   on s2.id = m2.staffId and s2.deleteFlag = 0 AND s2.${@hrms.config.StaffMapperConfig@ON_JOB}
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                       m.deleteFlag = 0
+                       left join tbl_staff_basic b
+                                 on b.id = m.staffId and b.deleteFlag = 0 AND b.${@hrms.config.StaffMapperConfig@ON_JOB}
+                       left join mst_department dm on dm.id = pd.leader
+                       left join mst_post p on p.id = pd.postId
+                       left join mst_duty d on d.id = pd.dutyId
+                where pd.leader = #{departId}
+                limit 1
+            </select>
+            <select id="getDepartmentLeaderByPostId" resultType="hrms.pojo.vo.DepartmentLeaderVo">
+                SELECT b.name,
+                       b.id    AS staffId,
+                       b.jobCOde,
+                       m.majorJobId,
+                       m.partTimeId,
+
+                       dm.id   AS departId,
+                       p.id    AS postId,
+                       d.id    AS dutyId,
+                       dm.name AS departName,
+                       p.name  AS postName,
+                       d.name  AS dutyName
+                FROM tbl_post_duty pd
+                       left join (
+                  SELECT m1.id   AS majorJobId,
+                         NULL    AS partTimeId,
+                         m1.departId,
+                         m1.postId,
+                         m1.dutyId,
+                         m1.termination,
+                         m1.deleteFlag,
+                         m1.staffId,
+                         s1.name AS leaderName,
+                         s1.id   AS leader
+                  FROM tbl_staff_major_job m1
+                         left join tbl_staff_basic s1
+                                   on s1.id = m1.staffId and s1.deleteFlag = 0 AND s1.${@hrms.config.StaffMapperConfig@ON_JOB}
+                  UNION ALL
+                  SELECT NULL       majorJobId,
+                         m2.id   AS partTimeId,
+                         m2.departId,
+                         m2.postId,
+                         m2.dutyId,
+                         m2.termination,
+                         m2.deleteFlag,
+                         m2.staffId,
+                         s2.name AS leaderName,
+                         s2.id   AS leader
+                  from tbl_staff_part_time_job m2
+                         left join tbl_staff_basic s2
+                                   on s2.id = m2.staffId and s2.deleteFlag = 0 AND s2.${@hrms.config.StaffMapperConfig@ON_JOB}
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                       m.deleteFlag = 0
+                       left join tbl_staff_basic b
+                                 on b.id = m.staffId and b.deleteFlag = 0 AND b.${@hrms.config.StaffMapperConfig@ON_JOB}
+                       left join mst_department dm on dm.id = pd.leader
+                       left join mst_post p on p.id = pd.postId
+                       left join mst_duty d on d.id = pd.dutyId
+                where pd.postId = #{postId}
+                AND pd.leader is not null
+                limit 1
+            </select>
+            <select id="getDepartmentLeaderList" resultType="hrms.pojo.vo.DepartmentLeaderVo">
+                SELECT b.name,
+                       b.id    AS staffId,
+                       b.jobCOde,
+                       m.majorJobId,
+                       m.partTimeId,
+
+                       dm.id   AS departId,
+                       p.id    AS postId,
+                       d.id    AS dutyId,
+                       dm.name AS departName,
+                       p.name  AS postName,
+                       d.name  AS dutyName
+                FROM tbl_post_duty pd
+                       left join (
+                  SELECT m1.id   AS majorJobId,
+                         NULL    AS partTimeId,
+                         m1.departId,
+                         m1.postId,
+                         m1.dutyId,
+                         m1.termination,
+                         m1.deleteFlag,
+                         m1.staffId,
+                         s1.name AS leaderName,
+                         s1.id   AS leader
+                  FROM tbl_staff_major_job m1
+                         left join tbl_staff_basic s1
+                                   on s1.id = m1.staffId and s1.deleteFlag = 0 AND s1.${@hrms.config.StaffMapperConfig@ON_JOB}
+                  UNION ALL
+                  SELECT NULL       majorJobId,
+                         m2.id   AS partTimeId,
+                         m2.departId,
+                         m2.postId,
+                         m2.dutyId,
+                         m2.termination,
+                         m2.deleteFlag,
+                         m2.staffId,
+                         s2.name AS leaderName,
+                         s2.id   AS leader
+                  from tbl_staff_part_time_job m2
+                         left join tbl_staff_basic s2
+                                   on s2.id = m2.staffId and s2.deleteFlag = 0 AND s2.${@hrms.config.StaffMapperConfig@ON_JOB}
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                       m.deleteFlag = 0
+                       left join tbl_staff_basic b
+                                 on b.id = m.staffId and b.deleteFlag = 0 AND b.${@hrms.config.StaffMapperConfig@ON_JOB}
+                       left join mst_department dm on dm.id = pd.leader
+                       left join mst_post p on p.id = pd.postId
+                       left join mst_duty d on d.id = pd.dutyId
+                where pd.leader IS NOT NULL
+                  and b.id IS NOT NULL
+            </select>
+            <select id="getDepartmentLeaderByStaffId" resultType="hrms.pojo.vo.DepartmentLeaderVo">
+                SELECT b.name,
+                       b.id    AS staffId,
+                       b.jobCOde,
+                       m.majorJobId,
+                       m.partTimeId,
+
+                       dm.id   AS departId,
+                       p.id    AS postId,
+                       d.id    AS dutyId,
+                       dm.name AS departName,
+                       p.name  AS postName,
+                       d.name  AS dutyName
+                FROM tbl_post_duty pd
+                       left join (
+                  SELECT m1.id   AS majorJobId,
+                         NULL    AS partTimeId,
+                         m1.departId,
+                         m1.postId,
+                         m1.dutyId,
+                         m1.termination,
+                         m1.deleteFlag,
+                         m1.staffId,
+                         s1.name AS leaderName,
+                         s1.id   AS leader
+                  FROM tbl_staff_major_job m1
+                         left join tbl_staff_basic s1
+                                   on s1.id = m1.staffId and s1.deleteFlag = 0 AND s1.${@hrms.config.StaffMapperConfig@ON_JOB}
+                  UNION ALL
+                  SELECT NULL       majorJobId,
+                         m2.id   AS partTimeId,
+                         m2.departId,
+                         m2.postId,
+                         m2.dutyId,
+                         m2.termination,
+                         m2.deleteFlag,
+                         m2.staffId,
+                         s2.name AS leaderName,
+                         s2.id   AS leader
+                  from tbl_staff_part_time_job m2
+                         left join tbl_staff_basic s2
+                                   on s2.id = m2.staffId and s2.deleteFlag = 0 AND s2.${@hrms.config.StaffMapperConfig@ON_JOB}
+                ) m ON m.departId = pd.leader and m.postId = pd.postId and m.dutyId = pd.dutyId and m.termination = 0 and
+                       m.deleteFlag = 0
+                       left join tbl_staff_basic b
+                                 on b.id = m.staffId and b.deleteFlag = 0 AND b.${@hrms.config.StaffMapperConfig@ON_JOB}
+                       left join mst_department dm on dm.id = pd.leader
+                       left join mst_post p on p.id = pd.postId
+                       left join mst_duty d on d.id = pd.dutyId
+                where pd.leader IS NOT NULL
+                  and b.id = #{staffId}
+            </select>
+            <select id="getDepartInfo" resultType="hrms.pojo.vo.DepartInfoVo">
+                select
+                    j.departId,
+                    d.name  as departName,
+                    j.postId,
+                    p.name  as postName,
+                    j.dutyId,
+                    du.name as dutyName
+                from tbl_staff_major_job j
+                    INNER join mst_department d on j.departId = d.id and d.deleteFlag = '0'
+                    INNER join mst_post p on j.postId = p.id and p.deleteFlag = '0'
+                    INNER join mst_duty du on j.dutyId = du.id and du.deleteFlag = '0'
+                where j.deleteFlag = '0' and j.termination = '0' and j.staffId = #{staffId}
+            </select>
+            <select id="getDepartInfoByDay" resultType="hrms.pojo.vo.DepartInfoVo">
+                select
+                    j.departId,
+                d.fullName as departName,
+                    j.postId,
+                    p.name  as postName,
+                    j.dutyId,
+                    du.name as dutyName
+                from tbl_staff_major_job j
+                    INNER join mst_department d on j.departId = d.id and d.deleteFlag = '0'
+                    INNER join mst_post p on j.postId = p.id and p.deleteFlag = '0'
+                    INNER join mst_duty du on j.dutyId = du.id and du.deleteFlag = '0'
+                where j.staffId = #{staffId}
+                AND j.termination in (0, 1)
+                AND j.startDate &lt;= #{day}
+                AND (j.finishDate &gt;= #{day} OR j.finishDate IS NULL)
+            </select>
+
+            <select id="getDepartMentNameById" resultType="java.lang.String">
+                select fullName
+                from mst_department
+                WHERE id = #{id}
+            </select>
+            <select id="getPostRemarkReport" resultType="java.util.Map">
+                select
+                md.fullName as departName,
+                    p.name,
+                    p.remark,
+                    p.qualification,
+                    p.responsibilities
+                from mst_post p
+                LEFT JOIN mst_department md ON p.departId = md.id
+                AND md.deleteFlag = 0
+                where p.deleteFlag = 0
+            </select>
+            <select id="getDepartById" resultType="hrms.entity.Department">
+                select
+                    id,
+                d.fullName as name,
+                       hierarchy,
+                       leader,
+                       parentDepart,
+                       remark,
+                       deleteFlag,
+                       orderNum,
+                       orderNumForStaffLib,
+                       root,
+                       assist,
+                       skipNode,
+                       version,
+                       operator,
+                       gmtCreate,
+                       gmtUpdate
+                from mst_department d
+                where id = #{id}
+            </select>-->
+

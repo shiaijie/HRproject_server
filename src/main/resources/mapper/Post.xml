@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hrms.mapper.UserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="hrms.entity.Post">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="remark" property="remark"/>
+        <result column="deleteFlag" property="deleteFlag"/>
+    </resultMap>
+
+    <select id="getPostById" resultType="hrms.entity.Post" parameterType="java.util.Map">
+        SELECT
+        post.id,
+        post.name,
+        post.remark,
+        depart.name as parentDepart
+        FROM post post
+        LEFT JOIN depart depart ON post.departId = depart.id AND depart.deleteFlag = 0
+        WHERE post.deleteFlag = 0 AND post.id = #{postId}
+    </select>
+
+    <select id="getAll" resultType="hrms.entity.Post">
+        SELECT
+        post.id,
+        post.name,
+        post.remark,
+        depart.name as parentDepart
+        FROM post post
+        LEFT JOIN depart depart ON post.departId = depart.id AND depart.deleteFlag = 0
+        WHERE post.deleteFlag = 0
+    </select>
+</mapper>
+        <!--
+
+            <select id="allPostOfDuty" resultType="java.lang.Long">
+                SELECT postId FROM duty
+                WHERE dutyId = #{dutyId}
+            </select>
+
+            <select id="tableList" resultType="hrms.pojo.dto.PostTree">
+                select
+                CONCAT('post_',a.id) as 'key',
+                a.id,
+                a.name as title,
+                a.name,
+                a.departId,
+                b.name as departmentName,
+                a.remark,
+                a.qualification,
+                a.responsibilities,
+                a.postGrade,
+                a.postRank,
+                group_concat(ifnull(f.fullPeopleNumber,0) order by f.dutyId asc separator ',') as formationPeopleNumber,
+                group_concat(ifnull(f.leader,0) order by f.dutyId asc separator ',') as formLeader,
+                group_concat(ifnull(e.incumbencyPeopleNumber,0) order by e.dutyId asc separator ',') as incumbencyPeopleNumber,
+                group_concat(d.name order by d.id asc separator ',') as dutyName,group_concat(f.id order by f.dutyId asc separator ',') as dutyPostId,
+                group_concat(d.id order by d.id asc separator ',') as dutyId,
+                group_concat( ifnull( h.partTimeCount, 0 ) ORDER BY f.dutyId ASC SEPARATOR ',' ) AS ptCounts,
+                group_concat( ifnull( g.reserveCount, 0 ) ORDER BY f.dutyId ASC SEPARATOR ',' ) AS reCounts
+                from mst_post a
+                left join mst_department b on a.departId = b.id and b.deleteFlag = 0
+                left join tbl_post_duty f on a.id = f.postId
+                left join mst_duty d on f.dutyId = d.id
+                left join
+                (
+                select sum(case when tsb.id is not null then 1 else 0 end ) as incumbencyPeopleNumber,tpd.dutyId,msp.id as
+                postId,msp.departId from mst_post msp
+                left join tbl_post_duty tpd on msp.id = tpd.postId
+                left join tbl_staff_major_job tsmj on tpd.dutyId = tsmj.dutyId and tpd.postId = tsmj.postId and msp.departId =
+                tsmj.departId and termination = 0 and tsmj.deleteFlag = 0
+                left join tbl_staff_basic tsb on tsmj.staffId = tsb.id and
+                tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                where msp.deleteFlag = 0 and tpd.dutyId is not null
+                group by tpd.dutyId,msp.id,msp.departId
+                ) e on f.dutyId = e.dutyId and f.postId = e.postId and a.departId = e.departId
+                LEFT JOIN (
+                SELECT
+                    count( tsb.id ) AS partTimeCount,
+                    tpd.dutyId,
+                    msp.id AS postId,
+                    msp.departId
+                FROM
+                    mst_post msp
+                    LEFT JOIN tbl_post_duty tpd ON msp.id = tpd.postId
+                    LEFT JOIN tbl_staff_part_time_job tsptj ON tpd.dutyId = tsptj.dutyId
+                    AND tpd.postId = tsptj.postId
+                    AND msp.departId = tsptj.departId
+                    AND tsptj.termination = 0
+                    AND tsptj.deleteFlag = 0
+                    left join tbl_staff_basic tsb on tsptj.staffId = tsb.id and
+                    tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                WHERE
+                    msp.deleteFlag = 0
+                    AND tpd.dutyId IS NOT NULL
+                GROUP BY
+                    tpd.dutyId,
+                    msp.id,
+                    msp.departId
+                    ) h ON f.dutyId = h.dutyId
+                    AND f.postId = h.postId
+                    AND a.departId = h.departId
+                LEFT JOIN (
+                SELECT
+                    count( tsb.id ) AS reserveCount,
+                    tpd.dutyId,
+                    msp.id AS postId,
+                    msp.departId
+                FROM
+                    mst_post msp
+                    LEFT JOIN tbl_post_duty tpd ON msp.id = tpd.postId
+                    LEFT JOIN tbl_reserve tr ON tpd.dutyId = tr.reserveDuty
+                    AND tpd.postId = tr.reservePost
+                    AND msp.departId = tr.reserveDept
+                    left join tbl_staff_basic tsb on tr.staffId = tsb.id and
+                    tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                WHERE
+                    msp.deleteFlag = 0  AND tr.deleteFlag = 0
+                    AND tpd.dutyId IS NOT NULL
+                GROUP BY
+                    tpd.dutyId,
+                    msp.id,
+                    msp.departId
+                    ) g ON f.dutyId = g.dutyId
+                    AND f.postId = g.postId
+                    AND a.departId = g.departId
+                where a.deleteFlag = 0
+                group by a.id,a.name,a.departId,b.name,a.remark
+                order by a.name,a.id
+            </select>
+
+            <select id="checkPostPeople" resultType="java.util.Map" parameterType="java.util.Map">
+                select tsb.id
+                from mst_post msp
+                left join tbl_staff_major_job tsmj on msp.id = tsmj.postId and tsmj.termination = 0 and tsmj.deleteFlag = 0
+                inner join tbl_staff_basic tsb on tsmj.staffId = tsb.id and
+                tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                where msp.deleteFlag = 0 and msp.id in
+                <foreach collection="ids" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </select>
+
+            <select id="getIncumbencyPeople" parameterType="java.util.Map"
+                    resultType="hrms.entity.User ">
+                select
+                tsb.id,
+                tsb.name,
+                tsb.jobCode
+                from mst_post msp
+                left join tbl_post_duty tpd on msp.id = tpd.postId
+                left join tbl_staff_major_job tsmj on tpd.dutyId = tsmj.dutyId and tpd.postId = tsmj.postId and msp.departId =
+                tsmj.departId and tsmj.termination = 0 and tsmj.deleteFlag = 0
+                left join tbl_staff_basic tsb on tsmj.staffId = tsb.id and
+                tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                where msp.deleteFlag = 0 and tsb.id is not null and tpd.dutyId = #{dutyId} and msp.id = #{postId}
+                order by tsb.jobCode
+            </select>
+
+            <select id="getPartTimePeople" parameterType="java.util.Map"
+                    resultType="hrms.entity.User">
+                SELECT
+                    tsb.id,
+                    tsb.NAME,
+                    tsb.jobCode
+                FROM
+                    mst_post msp
+                    LEFT JOIN tbl_post_duty tpd ON msp.id = tpd.postId
+                    LEFT JOIN tbl_staff_part_time_job tsptj ON tpd.dutyId = tsptj.dutyId
+                    AND tpd.postId = tsptj.postId
+                    AND msp.departId = tsptj.departId
+                    AND tsptj.termination = 0
+                    AND tsptj.deleteFlag = 0
+                    LEFT JOIN tbl_staff_basic tsb ON tsptj.staffId = tsb.id
+                    AND tsb.deleteFlag = 0
+                    AND  tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                WHERE
+                    msp.deleteFlag = 0
+                    AND tsb.id IS NOT NULL
+                    AND tpd.dutyId = #{dutyId} and msp.id = #{postId}
+                ORDER BY
+                    tsb.jobCode
+            </select>
+
+            <select id="getReservePeople" parameterType="java.util.Map"
+                    resultType="hrms.entity.User">
+                SELECT
+                tsb.id,
+                tsb.NAME,
+                tsb.jobCode
+                FROM
+                mst_post msp
+                LEFT JOIN tbl_post_duty tpd ON msp.id = tpd.postId
+                LEFT JOIN tbl_reserve tr ON tpd.dutyId = tr.reserveDuty
+                AND tpd.postId = tr.reservePost
+                AND msp.departId = tr.reserveDept
+                AND tr.deleteFlag = 0
+                LEFT JOIN tbl_staff_basic tsb ON tr.staffId = tsb.id
+                AND tsb.deleteFlag = 0 AND tsb.bakStatus = 1
+                AND  tsb.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB} and tsb.deleteFlag = 0
+                WHERE
+                msp.deleteFlag = 0
+                AND tsb.id IS NOT NULL
+                AND tpd.dutyId = #{dutyId} and msp.id = #{postId}
+                ORDER BY
+                tsb.jobCode
+            </select>
+
+            <select id="getPostInDept" resultType="hrms.pojo.dto.Tree" parameterType="java.util.Map">
+                select
+                id as 'key',
+                name as title
+                from mst_post a
+                where a.deleteFlag = 0 and departId = #{departId}
+                order by id asc
+            </select>
+
+            <select id="getDutyInPost" resultType="hrms.entity.Duty" parameterType="java.util.Map">
+                select
+                b.id,
+                b.name
+                from mst_post a
+                left join tbl_post_duty c on a.id = c.postId
+                left join mst_duty b on c.dutyId = b.id
+                where a.deleteFlag = 0 and b.deleteFlag = 0 and a.id = #{postId}
+                order by c.dutyId asc
+            </select>
+
+            <select id="allPost" resultType="hrms.pojo.vo.PostViewModel">
+                select
+                a.id,
+                a.name,
+                b.fullName as depart,
+                a.remark,
+                a.qualification,
+                a.responsibilities
+                from mst_post a
+                left join mst_department b on a.departId = b.id
+                where a.deleteFlag = 0 AND b.deleteFlag = 0
+                order by b.parentDepart,b.orderNum,a.departId,a.id
+            </select>
+
+            <select id="getPostDepart" resultType="hrms.pojo.vo.PostViewModel">
+                SELECT
+                a.id,
+                a.name,
+                b.name AS depart,
+                b.id AS departId
+                FROM mst_post a
+                LEFT JOIN mst_department b
+                ON a.departId = b.id AND b.deleteFlag = 0
+                WHERE a.deleteFlag = 0 AND a.departId IN (${departId})
+            </select>
+
+            <select id="checkDuty" resultType="java.util.Map">
+                SELECT a.id
+                FROM tbl_staff_major_job a
+                LEFT JOIN tbl_staff_basic b ON a.staffId = b.id
+                WHERE a.deleteFlag = 0 AND a.termination = 0 AND b.deleteFlag = 0 AND
+                b.${@cn.net.rococo.hrms.config.StaffMapperConfig@ON_JOB}
+                AND a.departId = #{departId} AND a.postId = #{postId} AND a.dutyId = #{dutyId}
+            </select>
+
+            <select id="getPostTree" resultType="hrms.pojo.dto.PostTree">
+                select
+                a.id,
+                a.id as `key`,
+                a.name,
+                a.departId,
+                a.remark,
+                a.qualification,
+                a.responsibilities
+                from mst_post a
+                <where>
+                    a.deleteFlag = '0'
+                    and a.id in
+                    <foreach collection="postIdList" index="index" item="item" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </where>
+            </select>
+            <select id="getFormationPeopleNumber" resultType="java.lang.Integer">
+                  SELECT
+                  f.fullPeopleNumber AS formationPeopleNumber
+                  FROM mst_post a
+                  LEFT JOIN mst_department b ON a.departId = b.id AND b.deleteFlag = 0
+                  LEFT JOIN tbl_post_duty f ON a.id = f.postId
+                  WHERE a.deleteFlag = 0
+                  AND f.dutyId = #{dutyId}
+                  AND a.id = #{postId}
+                  AND a.departId = #{departId}
+            </select>
+        -->
